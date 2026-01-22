@@ -27,6 +27,9 @@ import Login from './components/Auth/Login'
 import AddAddress from './pages/AddAddress'
 import AddSalesOrder from './pages/AddSalesOrder'
 import AddCustomer from './pages/AddCustomer'
+import StockDashboard from './pages/StockDashboard'
+import AddItem from './pages/AddItem'
+import ItemDetail from './pages/ItemDetail'
 
 
 const App = () => {
@@ -62,6 +65,11 @@ const App = () => {
         <Route path='/user/user-list' element={<UserList/>}/>
         <Route path='/user/edit-user/:userId'element={<EditUser/>}/>
 
+
+        <Route path='/stock/dashboard'element={<StockDashboard/>}/>
+        <Route path='/stock/:id'element={<ItemDetail/>}/>
+        <Route path='/stock/create-item'element={<AddItem/>}/>
+        {/* <Route path='/stock/dashboard'element={<EditUser/>}/> */}
 
         <Route path='/overview/overview-evening' element={<OverviewEvening/>}/>
         <Route path='/overview/overview-evening/:eveningId' element={<EveningDetail />}/>

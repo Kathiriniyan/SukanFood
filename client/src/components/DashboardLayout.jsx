@@ -66,6 +66,14 @@ const menuItems = [
       { label: "User List", path: "/user/user-list" },
     ],
   },
+  {
+    label: "Stock",
+    icon: <FaAddressCard />,
+    children: [
+      { label: "Item Dashboard", path: "/stock/dashboard" },
+      { label: "Add Item", path: "/stock/create-item" },
+    ],
+  },
 ];
 
 const AdminLayout = ({ children }) => {
