@@ -13,7 +13,8 @@ import {
   FiGlobe,
   FiActivity,
   FiCheck,
-  FiPercent // Imported for the Tax Tab icon
+  FiPercent,
+  FiEyeOff // Imported for Hidden Icon
 } from "react-icons/fi";
 import { AnimatePresence, motion } from "framer-motion";
 import { stockItems as seedStockItems } from "../assets/assets"; 
@@ -270,10 +271,23 @@ const ItemDetail = () => {
 
   const handleToggleVisibility = () => {
     const newVal = !draft.visibility?.productVisible;
+    const now = new Date().toISOString();
+    
+    // Create Activity Log Entry
+    const logEntry = {
+        type: "updated",
+        at: now,
+        by: "Admin",
+        summary: `Updated web visibility to ${newVal ? "Visible" : "Hidden"}`,
+    };
+
     const updatedDraft = { 
       ...draft, 
-      visibility: { ...draft.visibility, productVisible: newVal } 
+      visibility: { ...draft.visibility, productVisible: newVal },
+      updatedAt: now,
+      activityLog: [...(draft.activityLog || []), logEntry]
     };
+
     setDraft(updatedDraft);
     // Auto-save this toggle
     setItems(prev => prev.map(x => x.id === item.id ? updatedDraft : x));
@@ -313,7 +327,7 @@ const ItemDetail = () => {
               {draft.isActive ? "Enabled" : "Disabled"}
             </span>
 
-            <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+            <span className={`text-xs px-2 py-1 rounded-full ${draft.visibility?.productVisible ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
               {draft.visibility?.productVisible ? "Visible" : "Hidden"}
             </span>
 
@@ -433,6 +447,18 @@ const ItemDetail = () => {
                    Inactive
                 </span>
               )}
+
+              {/* Added Web Visibility Badge here */}
+              {draft.visibility?.productVisible ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-green-50 text-green-700 text-xs font-medium border border-green-100">
+                   <FiGlobe className="w-3 h-3" /> Web Visible
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gray-50 text-gray-500 text-xs font-medium border border-gray-100">
+                   <FiEyeOff className="w-3 h-3" /> Web Hidden
+                </span>
+              )}
+
               {draft.isMaintainStock && (
                 <span className="px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 text-xs font-medium border border-purple-100">
                   Stock Maintained
