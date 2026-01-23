@@ -1,4 +1,3 @@
-// src/pages/ItemDetail.jsx
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import { useNavigate, useParams } from "react-router-dom";
@@ -20,7 +19,6 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { stockItems as seedStockItems } from "../assets/assets"; 
 
-/* -------------------- CONSTANTS & HELPERS -------------------- */
 
 const ITEM_GROUPS = ["Vegetables", "Fruits", "Leafy Greens", "Spices", "Root Crops", "Grains", "Dairy", "Meat"];
 const UOMS = ["Nos", "Kg", "g", "Liter", "ml", "Box", "Pack", "Bag", "Crate", "Bundle"];
@@ -39,7 +37,6 @@ const fmtDate = (iso) => {
   } catch { return iso; }
 };
 
-// Custom Toggle Component
 const Switch = ({ checked, onChange, label, disabled }) => (
   <div className={`flex items-center justify-between p-3 border rounded-xl transition-all ${checked ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'} ${disabled ? 'opacity-60' : ''}`}>
     <span className="text-sm font-medium text-gray-700">{label}</span>
@@ -60,7 +57,6 @@ const Switch = ({ checked, onChange, label, disabled }) => (
   </div>
 );
 
-// Styled Input Helper
 const InputField = ({ label, value, onChange, type = "text", disabled, suffix }) => (
   <div className="flex flex-col gap-1.5">
     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</label>
@@ -86,7 +82,6 @@ const InputField = ({ label, value, onChange, type = "text", disabled, suffix })
   </div>
 );
 
-// Styled Select Helper
 const SelectField = ({ label, value, onChange, options, disabled }) => (
   <div className="flex flex-col gap-1.5">
     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</label>
@@ -114,7 +109,7 @@ const SelectField = ({ label, value, onChange, options, disabled }) => (
   </div>
 );
 
-/* -------------------- MODAL: EDIT HERO INFO -------------------- */
+/* ------ EDIT HERO INFO -------------------- */
 
 const EditHeaderModal = ({ isOpen, onClose, data, onSave }) => {
   const [formData, setFormData] = useState(data);
@@ -122,7 +117,6 @@ const EditHeaderModal = ({ isOpen, onClose, data, onSave }) => {
 
   useEffect(() => { if (isOpen) setFormData(data); }, [isOpen, data]);
 
-  // NEW: Logic to check if modal form is dirty
   const isHeaderDirty = useMemo(() => {
      return JSON.stringify(formData) !== JSON.stringify(data);
   }, [formData, data]);
@@ -179,7 +173,6 @@ const EditHeaderModal = ({ isOpen, onClose, data, onSave }) => {
                   />
                 </div>
 
-                {/* Quick Stats Edit Section */}
                 <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
                     <InputField 
                       label="Current Stock" 
@@ -278,37 +271,29 @@ const ItemDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  // 1. Data Loader
   const [items, setItems] = useState(seedStockItems);
 
   const item = useMemo(() => items.find((x) => String(x.id) === String(id)), [items, id]);
   const [draft, setDraft] = useState(null);
 
-  // 2. UI State
   const [activeTab, setActiveTab] = useState("details");
   
-  // CHANGED: Tab-specific editing state
-  // Stores the ID of the tab currently in edit mode (e.g., 'details', 'inventory') or null.
   const [editingTab, setEditingTab] = useState(null); 
   
   const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
 
-  // Initialize Draft
   useEffect(() => {
     if (item) setDraft({ ...item });
   }, [item]);
 
-  // Check if form is dirty (has changes) for the Main Form
   const isDirty = useMemo(() => {
      if (!item || !draft) return false;
      return JSON.stringify(item) !== JSON.stringify(draft);
   }, [item, draft]);
 
-  // Handlers
   const handleSaveMain = () => {
     const now = new Date().toISOString();
     
-    // Create Log Entry
     const logEntry = {
       type: "updated",
       at: now,
@@ -327,17 +312,16 @@ const ItemDetail = () => {
       }
       return x;
     }));
-    setEditingTab(null); // Exit edit mode
+    setEditingTab(null); 
   };
 
   const handleCancelEdit = () => {
-    setDraft(item); // Revert changes
-    setEditingTab(null); // Exit edit mode
+    setDraft(item); 
+    setEditingTab(null); 
   };
 
   const handleHeaderSave = (newHeaderData) => {
     setDraft(prev => ({ ...prev, ...newHeaderData }));
-    // Auto-save header changes for better UX.
     const now = new Date().toISOString();
     setItems(prev => prev.map(x => x.id === item.id ? { ...x, ...newHeaderData, updatedAt: now } : x));
   };
@@ -372,7 +356,6 @@ const ItemDetail = () => {
 
   return (
     <DashboardLayout>
-      {/* 1. TOP HEADER NAVIGATION & ACTIONS */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-6">
         <div className="min-w-0">
           <div className="text-sm text-gray-500">
@@ -488,7 +471,6 @@ const ItemDetail = () => {
               {draft.description}
             </p>
 
-            {/* INTEGRATED QUICK STATS ROW */}
             <div className="mt-6 pt-4 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-6">
                 <div>
                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Stock</div>
@@ -544,13 +526,10 @@ const ItemDetail = () => {
         </div>
       </section>
 
-      {/* 3. MAIN CONTENT GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* LEFT COLUMN: TABS & FORM */}
         <div className="lg:col-span-8 space-y-6">
           
-          {/* Tabs Header */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-1.5 flex gap-1 sticky top-4 z-20 overflow-x-auto">
              {[
                { id: "details", label: "Details", icon: FiPackage },
@@ -573,12 +552,10 @@ const ItemDetail = () => {
              ))}
           </div>
 
-          {/* Tab Content Area */}
           <motion.div 
             layout
             className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 relative"
           >
-             {/* TAB ACTION BUTTONS */}
              <div className="absolute top-6 right-6 z-10">
                {editingTab === activeTab ? (
                  <div className="flex gap-2">
@@ -590,7 +567,7 @@ const ItemDetail = () => {
                    </button>
                    <button 
                      onClick={handleSaveMain}
-                     disabled={!isDirty} // Disable if no changes
+                     disabled={!isDirty} 
                      className={`flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg shadow-sm transition-all ${
                         isDirty 
                           ? "bg-red-600 text-white hover:bg-red-700" 
@@ -610,7 +587,6 @@ const ItemDetail = () => {
                )}
              </div>
 
-             {/* TAB: DETAILS */}
              {activeTab === "details" && (
                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                  <h3 className="text-lg font-bold text-gray-800 mb-6">General Information</h3>
@@ -721,7 +697,6 @@ const ItemDetail = () => {
                </div>
              )}
 
-             {/* TAB: INVENTORY */}
              {activeTab === "inventory" && (
                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                  <h3 className="text-lg font-bold text-gray-800 mb-6">Inventory Settings</h3>
@@ -796,7 +771,6 @@ const ItemDetail = () => {
                </div>
              )}
 
-             {/* TAB: WEBSHOP */}
              {activeTab === "webshop" && (
                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                  <h3 className="text-lg font-bold text-gray-800 mb-6">Webshop Configuration</h3>
@@ -855,7 +829,6 @@ const ItemDetail = () => {
                </div>
              )}
              
-             {/* TAB: TAX */}
              {activeTab === "tax" && (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <h3 className="text-lg font-bold text-gray-800 mb-6">Tax Configuration</h3>
@@ -887,10 +860,8 @@ const ItemDetail = () => {
           </motion.div>
         </div>
 
-        {/* RIGHT COLUMN: SIDEBAR */}
         <div className="lg:col-span-4 space-y-6">
             
-           {/* Activity Timeline */}
            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
               <div className="flex items-center justify-between mb-4">
                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Activity History</h4>
@@ -900,7 +871,6 @@ const ItemDetail = () => {
               <div className="relative pl-4 border-l-2 border-gray-100 space-y-6">
                  {(draft.activityLog || []).slice(-5).reverse().map((log, idx) => (
                    <div key={idx} className="relative">
-                     {/* Timeline Dot */}
                      <span className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full border-2 border-white shadow-sm ${
                        log.type === 'created' ? 'bg-green-500' : 
                        log.type === 'updated' ? 'bg-blue-500' : 'bg-gray-400'
@@ -919,7 +889,6 @@ const ItemDetail = () => {
               </div>
            </div>
 
-           {/* Metadata */}
            <div className="text-center">
               <p className="text-xs text-gray-400">
                  Item Created: {fmtDate(draft.createdAt)}<br/>

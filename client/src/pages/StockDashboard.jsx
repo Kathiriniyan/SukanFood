@@ -1,4 +1,3 @@
-// src/pages/StockDashboard.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import { useNavigate } from "react-router-dom";
@@ -231,17 +230,14 @@ const StockDashboard = () => {
 
   const [search, setSearch] = useState("");
 
-  // View
   const [viewType, setViewType] = useState("table");
   const [userToggledView, setUserToggledView] = useState(false);
 
-  // --- MODES ---
   const [selectMode, setSelectMode] = useState(false);
   const [exportMode, setExportMode] = useState(false);
   
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // Pagination
   const [paginationEnabled, setPaginationEnabled] = useState(true);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const PAGINATION_OPTIONS = [5, 10, 20, 50, 100, 200, 500, 1000];
@@ -262,7 +258,6 @@ const StockDashboard = () => {
   const sentinelRef = useRef(null);
   const debounceRef = useRef(null);
 
-  /* ---------- Responsive view ---------- */
   useEffect(() => {
     const apply = () => {
       if (userToggledView) return;
@@ -274,7 +269,6 @@ const StockDashboard = () => {
     return () => window.removeEventListener("resize", apply);
   }, [userToggledView]);
 
-  /* ---------- Data pipeline ---------- */
   const sorted = useMemo(() => {
     return [...items].sort((a, b) => new Date(stableSortKey(b)) - new Date(stableSortKey(a)));
   }, [items]);
@@ -313,7 +307,6 @@ const StockDashboard = () => {
   const infiniteItems = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const displayItems = paginationEnabled ? pagedItems : infiniteItems;
 
-  /* ---------- Selection helpers ---------- */
   const isSelected = (id) => selectedIds.includes(id);
 
   const toggleSelect = (id) => {
@@ -350,7 +343,6 @@ const StockDashboard = () => {
       setSelectedIds(hiddenIds);
   };
 
-  /* ---------- Mode Toggles ---------- */
   const activateSelectMode = () => {
       setExportMode(false);
       setSelectMode(true);
@@ -367,7 +359,6 @@ const StockDashboard = () => {
       setExportMode(false);
   };
 
-  /* ---------- Actions ---------- */
   const toggleVisibility = (id) => {
     const now = nowISO();
     setItems((prev) =>
@@ -421,7 +412,7 @@ const StockDashboard = () => {
     return allAreVisible ? "Hide Selected" : "Show Selected";
   };
 
-  /* ---------- Export Logic (Triggered from Bar) ---------- */
+  /* ---------- Export--------- */
   const processExport = () => {
       let dataToExport = [...filtered]; 
 
@@ -453,7 +444,7 @@ const StockDashboard = () => {
       XLSX.writeFile(wb, "stock_items.xlsx");
   };
 
-  /* ---------- Pagination numbers ---------- */
+  /* ---------- Pagination  ---------- */
   const renderPageNumbers = () => {
     const pages = [];
     if (totalPages <= 5) {
@@ -530,7 +521,6 @@ const StockDashboard = () => {
   /* ---------- RENDER ---------- */
   return (
     <DashboardLayout>
-      {/* Breadcrumb row + Add + Export/Import */}
       <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
         <div className="text-sm text-gray-500">
           <span className="hover:text-red-500 cursor-pointer">Inventory</span> /{" "}
@@ -602,7 +592,6 @@ const StockDashboard = () => {
               <FiMenu className="w-5 h-5" />
             </button>
 
-            {/* Rows Per Page Selector (Hidden if pagination disabled) */}
             {paginationEnabled && (
                 <div className="flex items-center gap-2 text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-2 h-[38px]">
                     <span className="text-xs font-medium">Rows:</span>
@@ -798,7 +787,7 @@ const StockDashboard = () => {
             </table>
           </div>
 
-          {/* Pagination UI - Centered */}
+          {/* Pagination */}
           {paginationEnabled && (
             <div className="flex flex-wrap gap-4 justify-center items-center mt-6 text-sm px-4 pb-4 border-t border-gray-100 pt-4">
                   <button disabled={currentPage === 1} onClick={() => setCurrentPage((prev) => prev - 1)} className="px-3 py-1.5 rounded-lg bg-red-500 text-white disabled:opacity-40 hover:bg-red-600 transition">Prev</button>
@@ -809,7 +798,6 @@ const StockDashboard = () => {
           {!paginationEnabled && (<div className="px-4 pb-4"><div ref={sentinelRef} className="h-10 flex items-center justify-center">{isLoadingMore ? <span className="text-xs text-gray-500">Loading more…</span> : visibleCount >= filtered.length ? <span className="text-xs text-gray-400">All items loaded</span> : <span className="text-xs text-gray-400">Scroll to load more</span>}</div></div>)}
         </section>
       ) : (
-        /* CARD VIEW */
         <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mt-6 pb-24">
           {displayItems.length === 0 ? <div className="col-span-full py-10 text-center text-gray-500 text-sm">No items found.</div> : (
             displayItems.map((p) => {
@@ -857,13 +845,10 @@ const StockDashboard = () => {
         </section>
       )}
 
-      {/* FLOATING ACTION BARS (MUTUALLY EXCLUSIVE & RESPONSIVE) */}
       
-      {/* 1. SELECT MODE BAR */}
       {selectMode && !exportMode && (
           <div className="fixed bottom-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-fit bg-white shadow-2xl border border-gray-200 p-3 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-3 z-50 animate-in fade-in slide-in-from-bottom-4">
              
-             {/* Row 1: Counter & Select Tools */}
              <div className="flex items-center justify-between gap-4">
                  <div className="flex items-center gap-2 md:border-r md:border-gray-200 md:pr-4">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-600">{selectedIds.length}</span>
@@ -877,21 +862,17 @@ const StockDashboard = () => {
                  </div>
              </div>
 
-             {/* Divider only on Desktop */}
              <div className="hidden md:block w-px h-8 bg-gray-200 mx-1"></div>
 
-             {/* Row 2 (Mobile) / Column 2 (Desktop): Action Button */}
              <button onClick={handleBulkVisibility} disabled={selectedIds.length === 0} className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white shadow-sm transition-all whitespace-nowrap ${selectedIds.length === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 hover:scale-[1.02]"}`}>
                 {getBulkToggleButtonLabel() === "Show Selected" ? <FiEye /> : <FiEyeOff />}{getBulkToggleButtonLabel()}
              </button>
           </div>
       )}
 
-      {/* 2. EXPORT MODE BAR (NEW & RESPONSIVE) */}
       {exportMode && !selectMode && (
           <div className="fixed bottom-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-fit bg-white shadow-2xl border border-gray-200 p-3 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-3 z-50 animate-in fade-in slide-in-from-bottom-4">
              
-             {/* Row 1: Selection Controls */}
              <div className="flex items-center justify-between gap-4">
                  <div className="flex items-center gap-2 md:border-r md:border-gray-200 md:pr-4">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-600">{selectedIds.length}</span>
@@ -902,16 +883,13 @@ const StockDashboard = () => {
                     <button onClick={() => {setExportScope('selected'); selectAllVisible();}} className="p-2 rounded-xl text-gray-600 hover:bg-gray-100 text-xs flex flex-col items-center gap-0.5 min-w-[40px]"><FiCheckSquare className="w-4 h-4" /><span className="text-[10px]">All</span></button>
                     <button onClick={() => {setExportScope('selected'); clearSelection();}} className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 text-xs flex flex-col items-center gap-0.5 min-w-[40px]"><FiX className="w-4 h-4" /><span className="text-[10px]">Clear</span></button>
                     
-                    {/* Close Button on Mobile (Top Right) */}
                     <button onClick={exitModes} className="md:hidden p-2 ml-2 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors bg-gray-50 border border-gray-100"><FiX className="w-5 h-5" /></button>
                  </div>
              </div>
              
              <div className="hidden md:block w-px h-8 bg-gray-200 mx-1"></div>
 
-             {/* Row 2: Configuration */}
              <div className="flex flex-wrap items-center gap-2 justify-between md:justify-start">
-                 {/* Scope */}
                  <div className="flex flex-col gap-0.5 flex-1 md:flex-none min-w-[100px]">
                      <label className="text-[9px] font-bold text-gray-400 uppercase">Scope</label>
                      <select value={exportScope} onChange={(e) => setExportScope(e.target.value)} className="w-full text-xs bg-gray-50 border border-gray-200 rounded px-1 py-1.5 focus:ring-green-500 outline-none">
@@ -921,7 +899,6 @@ const StockDashboard = () => {
                      </select>
                  </div>
 
-                 {/* Filters */}
                  <div className="flex flex-col gap-0.5 flex-1 md:flex-none min-w-[100px]">
                      <label className="text-[9px] font-bold text-gray-400 uppercase">Filter</label>
                      <select value={exportVisFilter} onChange={(e) => setExportVisFilter(e.target.value)} className="w-full text-xs bg-gray-50 border border-gray-200 rounded px-1 py-1.5 focus:ring-green-500 outline-none">
@@ -931,7 +908,6 @@ const StockDashboard = () => {
                      </select>
                  </div>
 
-                 {/* Low Stock Toggle */}
                  <div className={`flex flex-col justify-center gap-0.5 px-2 py-0.5 rounded border transition-colors h-[34px] mt-auto ${exportLowStock ? 'bg-orange-50 border-orange-200' : 'bg-white border-transparent'}`}>
                      <label className="text-[9px] font-bold text-gray-400 uppercase flex items-center gap-1 cursor-pointer">
                         Low Stock 
@@ -949,13 +925,11 @@ const StockDashboard = () => {
 
              <div className="hidden md:block w-px h-8 bg-gray-200 mx-1"></div>
 
-             {/* Row 3: Action */}
              <div className="flex gap-2">
                  <button onClick={processExport} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-green-600 hover:bg-green-700 shadow-sm transition-all whitespace-nowrap hover:scale-[1.02]">
                     <FiDownload /> Download
                  </button>
                  
-                 {/* Close Button on Desktop */}
                  <button onClick={exitModes} className="hidden md:block p-2 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors" title="Cancel Export">
                     <FiX className="w-5 h-5" />
                  </button>

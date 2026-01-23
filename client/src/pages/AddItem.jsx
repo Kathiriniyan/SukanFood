@@ -56,7 +56,7 @@ const InputField = ({ label, value, onChange, type = "text", required, placehold
         }}
         placeholder={placeholder}
         disabled={disabled}
-        onWheel={(e) => e.target.blur()} // Prevent accidental scroll changes
+        onWheel={(e) => e.target.blur()} 
         className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-all ${
           disabled
             ? "bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed"
@@ -72,7 +72,6 @@ const InputField = ({ label, value, onChange, type = "text", required, placehold
   </div>
 );
 
-// Styled Select Helper
 const SelectField = ({ label, value, onChange, options, required }) => (
   <div className="flex flex-col gap-1.5 w-full">
     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -102,7 +101,6 @@ const SelectField = ({ label, value, onChange, options, required }) => (
   </div>
 );
 
-// Styled Textarea Helper
 const TextAreaField = ({ label, value, onChange, rows = 3, required }) => (
   <div className="flex flex-col gap-1.5 w-full">
     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -124,7 +122,6 @@ const AddItem = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [imagePreview, setImagePreview] = useState(null);
 
-  // Initial State
   const [formData, setFormData] = useState({
     id: "",
     name: "",
@@ -132,7 +129,7 @@ const AddItem = () => {
     itemGroup: "",
     productType: "",
     defaultUom: "",
-    image: "", // Store URL or Base64 here
+    image: "", 
     valuationRate: 0,
     standardSellingRate: 0,
     buyingPrice: 0,
@@ -183,7 +180,6 @@ const AddItem = () => {
   };
 
   const handleNext = () => {
-    // ✅ Validation for Step 1 with proper toast message per missing field
     if (currentStep === 1) {
       if (!formData.name?.trim()) {
         toast.error("Please fill Item Name");
@@ -201,14 +197,12 @@ const AddItem = () => {
         toast.error("Please select Default UOM");
         return;
       }
-      // Selling Rate required (must be > 0)
       if (!formData.standardSellingRate || Number(formData.standardSellingRate) <= 0) {
         toast.error("Please fill Selling Rate");
         return;
       }
     }
 
-    // Sync Stock on Step 2 transition
     if (currentStep === 2) {
       handleUpdate("stock", formData.openingStock);
     }
@@ -246,7 +240,6 @@ const AddItem = () => {
 
   return (
     <DashboardLayout>
-      {/* ✅ Toast container (kept inside page, no other UI changes) */}
       <ToastContainer position="top-right" autoClose={2500} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover draggable />
 
       <div className="mx-auto pb-20 px-4 sm:px-6">
@@ -290,7 +283,6 @@ const AddItem = () => {
         {/* Form Container */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           <AnimatePresence mode="wait">
-            {/* ---------------- STEP 1: BASIC INFO ---------------- */}
             {currentStep === 1 && (
               <motion.div
                 key="step1"
@@ -305,7 +297,7 @@ const AddItem = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {/* Left Col: Inputs */}
+                  {/* Inputs */}
                   <div className="lg:col-span-2 space-y-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="sm:col-span-2">
@@ -368,7 +360,7 @@ const AddItem = () => {
                     </div>
                   </div>
 
-                  {/* Right Col: Image Upload */}
+                  {/* Image Upload */}
                   <div className="lg:col-span-1">
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Item Image</label>
                     <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:bg-gray-50 transition-colors relative group h-64 flex flex-col items-center justify-center bg-gray-50">
@@ -401,7 +393,7 @@ const AddItem = () => {
               </motion.div>
             )}
 
-            {/* ---------------- STEP 2: INVENTORY ---------------- */}
+            {/* ---------------- INVENTORY ---------------- */}
             {currentStep === 2 && (
               <motion.div
                 key="step2"
@@ -454,7 +446,7 @@ const AddItem = () => {
               </motion.div>
             )}
 
-            {/* ---------------- STEP 3: WEBSHOP ---------------- */}
+            {/* ---------------- WEBSHOP ---------------- */}
             {currentStep === 3 && (
               <motion.div
                 key="step3"
@@ -508,7 +500,7 @@ const AddItem = () => {
               </motion.div>
             )}
 
-            {/* ---------------- STEP 4: TAX ---------------- */}
+            {/* ----------------TAX ---------------- */}
             {currentStep === 4 && (
               <motion.div
                 key="step4"
@@ -545,9 +537,8 @@ const AddItem = () => {
             )}
           </AnimatePresence>
 
-          {/* Footer Actions - Responsive Layout */}
           <div className="bg-gray-50 px-4 sm:px-8 py-4 border-t border-gray-200 flex flex-col-reverse sm:flex-row justify-between items-center gap-3">
-            {/* Back Button */}
+
             <div className="w-full sm:w-auto">
               {currentStep > 1 && (
                 <button
@@ -559,16 +550,13 @@ const AddItem = () => {
               )}
             </div>
 
-            {/* Right Side Buttons */}
             <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-              {/* ✅ Skip only for Step 3 (no Skip on Tax step) */}
               {currentStep === 3 && (
                 <button onClick={handleSkipWebshop} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 font-medium">
                   Skip
                 </button>
               )}
 
-              {/* Main Action Button */}
               {currentStep < 4 ? (
                 <button
                   onClick={handleNext}

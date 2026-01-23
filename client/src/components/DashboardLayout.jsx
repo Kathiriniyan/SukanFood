@@ -217,18 +217,17 @@ const AdminLayout = ({ children }) => {
     }
   }, [isMobileMenuOpen]);
 
-  // Delayed close on desktop submenu mouse leave to avoid flickering
   const handleMouseEnter = (idx) => {
-    if (window.innerWidth < 1024) return; // only desktop
+    if (window.innerWidth < 1024) return; 
     clearTimeout(submenuTimeout.current);
     setOpenMenu(idx);
   };
 
   const handleMouseLeave = () => {
-    if (window.innerWidth < 1024) return; // only desktop
+    if (window.innerWidth < 1024) return; 
     submenuTimeout.current = setTimeout(() => {
       setOpenMenu(null);
-    }, 300); // delay close by 300ms for smoother experience
+    }, 300); 
   };
 
   return (
