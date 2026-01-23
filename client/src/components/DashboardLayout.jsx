@@ -67,10 +67,10 @@ const menuItems = [
     ],
   },
   {
-    label: "Stock",
+    label: "Product",
     icon: <FaAddressCard />,
     children: [
-      { label: "Item Dashboard", path: "/stock/dashboard" },
+      { label: "Product Dashboard", path: "/stock/dashboard" },
       { label: "Add Item", path: "/stock/create-item" },
     ],
   },

@@ -1,5 +1,5 @@
 // src/pages/ItemDetail.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -14,21 +14,20 @@ import {
   FiActivity,
   FiCheck,
   FiPercent,
-  FiEyeOff // Imported for Hidden Icon
+  FiEyeOff,
+  FiUpload
 } from "react-icons/fi";
 import { AnimatePresence, motion } from "framer-motion";
 import { stockItems as seedStockItems } from "../assets/assets"; 
 
 /* -------------------- CONSTANTS & HELPERS -------------------- */
 
-const LS_KEY = "stockItemsAdminData";
 const ITEM_GROUPS = ["Vegetables", "Fruits", "Leafy Greens", "Spices", "Root Crops", "Grains", "Dairy", "Meat"];
 const UOMS = ["Nos", "Kg", "g", "Liter", "ml", "Box", "Pack", "Bag", "Crate", "Bundle"];
 const PRODUCT_TYPES = ["Raw", "Processed", "Frozen", "Packaged", "Fresh"];
 const MAT_REQ_TYPES = ["Purchase", "Pick", "Transfer", "Return"];
 const VAL_METHODS = ["FIFO", "FEFO", "Moving Average", "Standard"];
 const WEIGHT_UOMS = ["kg", "g", "lb", "oz"];
-// New Constant for Countries/Regions
 const COUNTRIES = ["Sri Lanka", "India", "United States", "United Kingdom", "European Union", "Singapore", "Australia", "Global"];
 
 const fmtDate = (iso) => {
@@ -119,12 +118,29 @@ const SelectField = ({ label, value, onChange, options, disabled }) => (
 
 const EditHeaderModal = ({ isOpen, onClose, data, onSave }) => {
   const [formData, setFormData] = useState(data);
+  const fileInputRef = useRef(null);
 
   useEffect(() => { if (isOpen) setFormData(data); }, [isOpen, data]);
+
+  // NEW: Logic to check if modal form is dirty
+  const isHeaderDirty = useMemo(() => {
+     return JSON.stringify(formData) !== JSON.stringify(data);
+  }, [formData, data]);
 
   const handleSave = () => {
     onSave(formData);
     onClose();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, image: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -187,16 +203,66 @@ const EditHeaderModal = ({ isOpen, onClose, data, onSave }) => {
                     </div>
                 </div>
 
-                <InputField 
-                  label="Image URL" 
-                  value={formData.image} 
-                  onChange={(v) => setFormData({ ...formData, image: v })} 
-                />
+                {/* Image Upload Section */}
+                <div className="space-y-3 pt-2 border-t border-gray-100">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Product Image</label>
+                    
+                    <div className="flex gap-3 items-start">
+                        {/* Preview */}
+                        <div className="w-20 h-20 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden shrink-0 flex items-center justify-center">
+                            {formData.image ? (
+                                <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                            ) : (
+                                <FiPackage className="text-gray-300 w-8 h-8" />
+                            )}
+                        </div>
+
+                        <div className="flex-1 space-y-3">
+                           {/* URL Input */}
+                           <input 
+                               type="text" 
+                               placeholder="Enter Image URL..."
+                               value={formData.image} 
+                               onChange={(e) => setFormData({ ...formData, image: e.target.value })} 
+                               className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 outline-none"
+                           />
+
+                           <div className="flex items-center gap-3">
+                                <span className="text-xs text-gray-400">OR</span>
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef}
+                                    className="hidden" 
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                />
+                                <button 
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="flex-1 flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg border border-gray-300 bg-gray-50 text-xs font-medium text-gray-600 hover:bg-white hover:border-red-300 transition-all"
+                                >
+                                     <FiUpload className="w-3.5 h-3.5" /> Upload Local
+                                </button>
+                           </div>
+                        </div>
+                    </div>
+                </div>
+
               </div>
 
               <div className="px-6 py-4 bg-gray-50 flex justify-end gap-2 shrink-0 border-t border-gray-100">
                 <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100">Cancel</button>
-                <button onClick={handleSave} className="px-4 py-2 rounded-lg text-sm bg-red-600 text-white hover:bg-red-700 shadow-sm">Save Changes</button>
+                <button 
+                  onClick={handleSave} 
+                  disabled={!isHeaderDirty}
+                  className={`px-4 py-2 rounded-lg text-sm shadow-sm transition-all ${
+                    isHeaderDirty 
+                      ? "bg-red-600 text-white hover:bg-red-700" 
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  Save Changes
+                </button>
               </div>
             </div>
           </motion.div>
@@ -213,17 +279,18 @@ const ItemDetail = () => {
   const { id } = useParams();
 
   // 1. Data Loader
-  const [items, setItems] = useState(() => {
-    const stored = localStorage.getItem(LS_KEY);
-    return stored ? JSON.parse(stored) : seedStockItems;
-  });
+  const [items, setItems] = useState(seedStockItems);
 
   const item = useMemo(() => items.find((x) => String(x.id) === String(id)), [items, id]);
   const [draft, setDraft] = useState(null);
 
   // 2. UI State
   const [activeTab, setActiveTab] = useState("details");
-  const [isEditing, setIsEditing] = useState(false); // Controls the main form inputs
+  
+  // CHANGED: Tab-specific editing state
+  // Stores the ID of the tab currently in edit mode (e.g., 'details', 'inventory') or null.
+  const [editingTab, setEditingTab] = useState(null); 
+  
   const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
 
   // Initialize Draft
@@ -231,10 +298,11 @@ const ItemDetail = () => {
     if (item) setDraft({ ...item });
   }, [item]);
 
-  // Sync back to LocalStorage
-  useEffect(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify(items));
-  }, [items]);
+  // Check if form is dirty (has changes) for the Main Form
+  const isDirty = useMemo(() => {
+     if (!item || !draft) return false;
+     return JSON.stringify(item) !== JSON.stringify(draft);
+  }, [item, draft]);
 
   // Handlers
   const handleSaveMain = () => {
@@ -259,7 +327,12 @@ const ItemDetail = () => {
       }
       return x;
     }));
-    setIsEditing(false);
+    setEditingTab(null); // Exit edit mode
+  };
+
+  const handleCancelEdit = () => {
+    setDraft(item); // Revert changes
+    setEditingTab(null); // Exit edit mode
   };
 
   const handleHeaderSave = (newHeaderData) => {
@@ -273,7 +346,6 @@ const ItemDetail = () => {
     const newVal = !draft.visibility?.productVisible;
     const now = new Date().toISOString();
     
-    // Create Activity Log Entry
     const logEntry = {
         type: "updated",
         at: now,
@@ -289,7 +361,6 @@ const ItemDetail = () => {
     };
 
     setDraft(updatedDraft);
-    // Auto-save this toggle
     setItems(prev => prev.map(x => x.id === item.id ? updatedDraft : x));
   };
 
@@ -297,7 +368,7 @@ const ItemDetail = () => {
     setDraft(prev => ({ ...prev, [key]: val }));
   };
 
-  if (!item || !draft) return <div className="p-10 text-center">Loading...</div>;
+  if (!item || !draft) return <div className="p-10 text-center">Loading... (Item ID: {id} not found in seed data)</div>;
 
   return (
     <DashboardLayout>
@@ -316,7 +387,7 @@ const ItemDetail = () => {
               className="hover:text-red-500 cursor-pointer"
               onClick={() => navigate("/stock/dashboard")}
             >
-              Stock Dashboard
+              Product Dashboard
             </span>{" "}
             / <span className="text-gray-800 font-medium truncate">{draft.name}</span>
           </div>
@@ -338,7 +409,7 @@ const ItemDetail = () => {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap justify-end">
-          {/* WEB VISIBILITY (UPDATED) */}
+          {/* WEB VISIBILITY */}
           <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-2 shadow-sm">
             <div className="min-w-0">
               <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
@@ -366,7 +437,7 @@ const ItemDetail = () => {
         </div>
       </div>
 
-      {/* 2. HERO SECTION - NOW WITH QUICK STATS */}
+      {/* 2. HERO SECTION */}
       <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-4 opacity-10">
            <FiPackage className="w-32 h-32" />
@@ -444,11 +515,10 @@ const ItemDetail = () => {
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium">
-                   Inactive
+                    Inactive
                 </span>
               )}
 
-              {/* Added Web Visibility Badge here */}
               {draft.visibility?.productVisible ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-green-50 text-green-700 text-xs font-medium border border-green-100">
                    <FiGlobe className="w-3 h-3" /> Web Visible
@@ -486,7 +556,7 @@ const ItemDetail = () => {
                { id: "details", label: "Details", icon: FiPackage },
                { id: "inventory", label: "Inventory", icon: FiActivity },
                { id: "webshop", label: "Webshop", icon: FiGlobe },
-               { id: "tax", label: "Tax", icon: FiPercent }, // New Tax Tab
+               { id: "tax", label: "Tax", icon: FiPercent }, 
              ].map(tab => (
                <button
                  key={tab.id}
@@ -508,26 +578,31 @@ const ItemDetail = () => {
             layout
             className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 relative"
           >
-             {/* EDIT MODE TOGGLE FOR TABS */}
+             {/* TAB ACTION BUTTONS */}
              <div className="absolute top-6 right-6 z-10">
-               {isEditing ? (
+               {editingTab === activeTab ? (
                  <div className="flex gap-2">
                    <button 
-                     onClick={() => { setDraft(item); setIsEditing(false); }}
+                     onClick={handleCancelEdit}
                      className="px-4 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
                    >
                      Cancel
                    </button>
                    <button 
                      onClick={handleSaveMain}
-                     className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 shadow-sm"
+                     disabled={!isDirty} // Disable if no changes
+                     className={`flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg shadow-sm transition-all ${
+                        isDirty 
+                          ? "bg-red-600 text-white hover:bg-red-700" 
+                          : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                     }`}
                    >
                      <FiSave /> Save Changes
                    </button>
                  </div>
                ) : (
                  <button 
-                   onClick={() => setIsEditing(true)}
+                   onClick={() => setEditingTab(activeTab)}
                    className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 shadow-sm"
                  >
                    <FiEdit3 /> Edit {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
@@ -545,21 +620,21 @@ const ItemDetail = () => {
                       value={draft.itemGroup} 
                       onChange={(v) => handleFieldChange("itemGroup", v)} 
                       options={ITEM_GROUPS} 
-                      disabled={!isEditing} 
+                      disabled={editingTab !== "details"} 
                     />
                     <SelectField 
                       label="Product Type" 
                       value={draft.productType} 
                       onChange={(v) => handleFieldChange("productType", v)} 
                       options={PRODUCT_TYPES} 
-                      disabled={!isEditing} 
+                      disabled={editingTab !== "details"} 
                     />
                     <SelectField 
                       label="Default UOM" 
                       value={draft.defaultUom} 
                       onChange={(v) => handleFieldChange("defaultUom", v)} 
                       options={UOMS} 
-                      disabled={!isEditing} 
+                      disabled={editingTab !== "details"} 
                     />
                     
                     <div className="col-span-1 md:col-span-2 border-t border-gray-100 my-2 pt-4">
@@ -572,7 +647,7 @@ const ItemDetail = () => {
                             type="number"
                             value={draft.valuationRate} 
                             onChange={(v) => handleFieldChange("valuationRate", v)} 
-                            disabled={!isEditing} 
+                            disabled={editingTab !== "details"} 
                             suffix="EUR"
                           />
                           <InputField 
@@ -580,7 +655,7 @@ const ItemDetail = () => {
                             type="number"
                             value={draft.standardSellingRate} 
                             onChange={(v) => handleFieldChange("standardSellingRate", v)} 
-                            disabled={!isEditing} 
+                            disabled={editingTab !== "details"} 
                             suffix="EUR"
                           />
                           <InputField 
@@ -588,7 +663,7 @@ const ItemDetail = () => {
                             type="number"
                             value={draft.buyingPrice} 
                             onChange={(v) => handleFieldChange("buyingPrice", v)} 
-                            disabled={!isEditing} 
+                            disabled={editingTab !== "details"} 
                             suffix="EUR"
                           />
                        </div>
@@ -602,7 +677,7 @@ const ItemDetail = () => {
                             type="number"
                             value={draft.overDeliveryAllowancePct} 
                             onChange={(v) => handleFieldChange("overDeliveryAllowancePct", v)} 
-                            disabled={!isEditing} 
+                            disabled={editingTab !== "details"} 
                             suffix="%"
                           />
                           <InputField 
@@ -610,7 +685,7 @@ const ItemDetail = () => {
                             type="number"
                             value={draft.overBillingAllowancePct} 
                             onChange={(v) => handleFieldChange("overBillingAllowancePct", v)} 
-                            disabled={!isEditing} 
+                            disabled={editingTab !== "details"} 
                             suffix="%"
                           />
                        </div>
@@ -621,25 +696,25 @@ const ItemDetail = () => {
                          label="Item is Active" 
                          checked={draft.isActive} 
                          onChange={(v) => handleFieldChange("isActive", v)} 
-                         disabled={!isEditing}
+                         disabled={editingTab !== "details"}
                        />
                        <Switch 
                          label="Allow Alternative Item" 
                          checked={draft.isAllowAlternativeItem} 
                          onChange={(v) => handleFieldChange("isAllowAlternativeItem", v)} 
-                         disabled={!isEditing}
+                         disabled={editingTab !== "details"}
                        />
                        <Switch 
                          label="Maintain Stock" 
                          checked={draft.isMaintainStock} 
                          onChange={(v) => handleFieldChange("isMaintainStock", v)} 
-                         disabled={!isEditing}
+                         disabled={editingTab !== "details"}
                        />
                        <Switch 
                          label="Has Variants" 
                          checked={draft.isHasVariants} 
                          onChange={(v) => handleFieldChange("isHasVariants", v)} 
-                         disabled={!isEditing}
+                         disabled={editingTab !== "details"}
                        />
                     </div>
                  </div>
@@ -656,21 +731,21 @@ const ItemDetail = () => {
                       type="number"
                       value={draft.openingStock} 
                       onChange={(v) => handleFieldChange("openingStock", v)} 
-                      disabled={!isEditing} 
+                      disabled={editingTab !== "inventory"} 
                     />
                     <SelectField 
                       label="Valuation Method" 
                       value={draft.validationMethod} 
                       onChange={(v) => handleFieldChange("validationMethod", v)} 
                       options={VAL_METHODS} 
-                      disabled={!isEditing} 
+                      disabled={editingTab !== "inventory"} 
                     />
                     <InputField 
                       label="Shelf Life" 
                       type="number"
                       value={draft.shelfLifeDays} 
                       onChange={(v) => handleFieldChange("shelfLifeDays", v)} 
-                      disabled={!isEditing} 
+                      disabled={editingTab !== "inventory"} 
                       suffix="Days"
                     />
                     <InputField 
@@ -678,7 +753,7 @@ const ItemDetail = () => {
                       type="number"
                       value={draft.warrantyDays} 
                       onChange={(v) => handleFieldChange("warrantyDays", v)} 
-                      disabled={!isEditing} 
+                      disabled={editingTab !== "inventory"} 
                       suffix="Days"
                     />
                     <div className="flex gap-2 items-end">
@@ -688,7 +763,7 @@ const ItemDetail = () => {
                             type="number"
                             value={draft.weightPerUnit} 
                             onChange={(v) => handleFieldChange("weightPerUnit", v)} 
-                            disabled={!isEditing} 
+                            disabled={editingTab !== "inventory"} 
                           />
                        </div>
                        <div className="w-24">
@@ -697,7 +772,7 @@ const ItemDetail = () => {
                              value={draft.weightUom}
                              onChange={(v) => handleFieldChange("weightUom", v)}
                              options={WEIGHT_UOMS}
-                             disabled={!isEditing}
+                             disabled={editingTab !== "inventory"}
                           />
                        </div>
                     </div>
@@ -706,7 +781,7 @@ const ItemDetail = () => {
                       value={draft.defaultMaterialRequestType} 
                       onChange={(v) => handleFieldChange("defaultMaterialRequestType", v)} 
                       options={MAT_REQ_TYPES} 
-                      disabled={!isEditing} 
+                      disabled={editingTab !== "inventory"} 
                     />
                     
                     <div className="col-span-1 md:col-span-2 pt-4">
@@ -714,7 +789,7 @@ const ItemDetail = () => {
                          label="Allow Negative Stock" 
                          checked={draft.isAllowNegativeStock} 
                          onChange={(v) => handleFieldChange("isAllowNegativeStock", v)} 
-                         disabled={!isEditing}
+                         disabled={editingTab !== "inventory"}
                        />
                     </div>
                  </div>
@@ -731,7 +806,7 @@ const ItemDetail = () => {
                       label="Enable for Webshop" 
                       checked={draft.isForWebshop} 
                       onChange={(v) => handleFieldChange("isForWebshop", v)} 
-                      disabled={!isEditing}
+                      disabled={editingTab !== "webshop"}
                    />
                  </div>
 
@@ -741,12 +816,12 @@ const ItemDetail = () => {
                         label="Web Item Title" 
                         value={draft.webItemTitle} 
                         onChange={(v) => handleFieldChange("webItemTitle", v)} 
-                        disabled={!isEditing} 
+                        disabled={editingTab !== "webshop"} 
                       />
                       
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold text-gray-500 uppercase">Short Description</label>
-                        {isEditing ? (
+                        {editingTab === "webshop" ? (
                           <textarea
                             rows={3}
                             value={draft.webSmallDescription}
@@ -762,7 +837,7 @@ const ItemDetail = () => {
 
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold text-gray-500 uppercase">Long Description (HTML Support)</label>
-                        {isEditing ? (
+                        {editingTab === "webshop" ? (
                           <textarea
                             rows={6}
                             value={draft.webLongDescription}
@@ -785,25 +860,25 @@ const ItemDetail = () => {
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <h3 className="text-lg font-bold text-gray-800 mb-6">Tax Configuration</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <SelectField 
-                        label="Region / Country"
-                        value={draft.taxRegion || ""}
-                        onChange={(v) => handleFieldChange("taxRegion", v)}
-                        options={COUNTRIES}
-                        disabled={!isEditing}
-                     />
-                     <InputField 
-                        label="Tax Percentage"
-                        type="number"
-                        value={draft.taxPercentage || 0}
-                        onChange={(v) => handleFieldChange("taxPercentage", v)}
-                        disabled={!isEditing}
-                        suffix="%"
-                     />
+                      <SelectField 
+                         label="Region / Country"
+                         value={draft.taxRegion || ""}
+                         onChange={(v) => handleFieldChange("taxRegion", v)}
+                         options={COUNTRIES}
+                         disabled={editingTab !== "tax"}
+                      />
+                      <InputField 
+                         label="Tax Percentage"
+                         type="number"
+                         value={draft.taxPercentage || 0}
+                         onChange={(v) => handleFieldChange("taxPercentage", v)}
+                         disabled={editingTab !== "tax"}
+                         suffix="%"
+                      />
                   </div>
                   <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
                       <p className="text-xs text-gray-500">
-                         <strong>Note:</strong> Tax settings applied here will be used as the default for Sales and Purchase orders created within the selected region.
+                          <strong>Note:</strong> Tax settings applied here will be used as the default for Sales and Purchase orders created within the selected region.
                       </p>
                   </div>
                 </div>
@@ -814,7 +889,7 @@ const ItemDetail = () => {
 
         {/* RIGHT COLUMN: SIDEBAR */}
         <div className="lg:col-span-4 space-y-6">
-           
+            
            {/* Activity Timeline */}
            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
               <div className="flex items-center justify-between mb-4">
@@ -825,16 +900,16 @@ const ItemDetail = () => {
               <div className="relative pl-4 border-l-2 border-gray-100 space-y-6">
                  {(draft.activityLog || []).slice(-5).reverse().map((log, idx) => (
                    <div key={idx} className="relative">
-                      {/* Timeline Dot */}
-                      <span className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full border-2 border-white shadow-sm ${
-                        log.type === 'created' ? 'bg-green-500' : 
-                        log.type === 'updated' ? 'bg-blue-500' : 'bg-gray-400'
-                      }`} />
-                      
-                      <div className="text-sm text-gray-800 font-medium leading-tight">{log.summary || log.note}</div>
-                      <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                     {/* Timeline Dot */}
+                     <span className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full border-2 border-white shadow-sm ${
+                       log.type === 'created' ? 'bg-green-500' : 
+                       log.type === 'updated' ? 'bg-blue-500' : 'bg-gray-400'
+                     }`} />
+                     
+                     <div className="text-sm text-gray-800 font-medium leading-tight">{log.summary || log.note}</div>
+                     <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                          <FiClock className="w-3 h-3" /> {fmtDate(log.at)} by {log.by}
-                      </div>
+                     </div>
                    </div>
                  ))}
                  
